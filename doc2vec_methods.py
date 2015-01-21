@@ -53,7 +53,7 @@ def df_title_format(df):
 
 	return df
 
-def df_review_colapse(df):
+def df_review_collapse(df):
 	"""
 	Apply aggregation so there is only 1 row per review (append the tokenize column 
 	for previous multiple lines of df for a single review)
