@@ -9,38 +9,63 @@ David L. Hochstetler
 Much thanks to Matt P. and Ben E. for the dataframe and Doc2Vec help!
 """
 
-import doc2vec_methods
-import doc2vec_classses
-
-
+import doc2vec_methods as dm
+from doc2vec_classes import LabeledReviewSentence
+import pdb					# For debugging
+import sys
+import re
+import gensim, logging 		# For Doc2Vec
+import time 				# For timing
 
 
 if __name__ == '__main__':
-
 	# Set the path to the pickled file
 	directory_path = '../../Lemmatized_by_Sentence/'
-    file_path = 'amazon_music_random_lemmatized_0.pandas'
-    df = load_pickled_df(directory_path, file_path)
+	file_path = 'amazon_music_random_lemmatized_0.pandas'
+	df = dm.load_pickled_df(directory_path, file_path)
 
-    # Get the df into desired format
-    # NOTE: This assumes set/hard-coded columns and column names in each df
-    df = df_columns_reduce(df)
-    df = df_title_format(df)
-    df = df_review_collapse(df)
+	# Smaller to help with debugging (1000,10000,100000)
+	df = df[:10000].copy(deep=True)
 
-    # Run Doc2Vec on the dataset of reviews
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+	# Get the df into desired format
+	# NOTE: This assumes set/hard-coded columns and column names in each df
+	df = dm.df_column_reduce(df)
+	df = dm.df_title_format(df)
 
-    reviews = LabeledReviewSentence(df)
+	# pdb.set_trace()
 
-    # Instantiate the doc2vec model
-    # Want to know how long this training takes
-    # Need to look into adjustable parameters...
-    # --> SEE gensim site
-	%time model = gensim.models.Doc2Vec(reviews, workers=4)
+	t0 = time.time()
+	df = dm.df_review_collapse(df)
+	t1 = time.time()
+	print("Time to run df_review_collapse was {0}".format(t1-t0))
+
+	# Run Doc2Vec on the dataset of reviews
+	# Not sure what this does...
+	logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+	reviews = LabeledReviewSentence(df)
+
+	# pdb.set_trace()
+	
+	# Instantiate the doc2vec model
+	# Want to know how long this training takes
+	# Need to look into adjustable parameters...
+	# --> SEE gensim site
+	num_workers = 4 # 4 on my macbook pro, may need to adjust for running on AWS
+	t0 = time.time()
+	model = gensim.models.Doc2Vec(reviews, workers=num_workers)
+	t1 = time.time()
+	print("Time to run Doc2Vec to generate model was {0}".format(t1-t0))
 
 	# Look at results
-	model.most_similar_cosmul(positive=['hard','rock'], negative=[], topn=10)
+	positive_terms = ['hard','rock']
+	negative_terms = []
+	print model.most_similar_cosmul(positive= positive_terms, 
+		negative=negative_terms, topn=10)
+
+	# Check out only titles:
+	title_scores = dm.most_similar_titles(df,positive_terms,negative_terms,model)
+
 
 
 
